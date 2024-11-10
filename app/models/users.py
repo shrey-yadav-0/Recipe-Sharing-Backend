@@ -1,7 +1,7 @@
 from flask_restful import abort
 
 from app.extensions import mongo, bcrypt
-from app.services.users import hash_password, validate_user_data, generate_verification_token
+from app.services.users import hash_password, validate_user_data, generate_verification_token, send_verification_email
 from app.utils import get_current_time
 
 
@@ -21,6 +21,9 @@ class UserModel:
         data["email_verified_at"] = None
 
         result = mongo.db.users.insert_one(data)
+
+        send_verification_email.delay(data["first_name"], data["email"], data["verification_token"])
+
         user_id = str(result.inserted_id)
         return user_id
 

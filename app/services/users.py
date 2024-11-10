@@ -1,12 +1,13 @@
-import time
+import os
 
 from celery import shared_task
 from flask import current_app
 from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_mail import Message
 from flask_restful import abort
 from itsdangerous import URLSafeTimedSerializer
 
-from app.extensions import bcrypt, mongo
+from app.extensions import bcrypt, mongo, mail
 from app.utils import get_current_time
 
 
@@ -57,12 +58,27 @@ def revoke_jwt_token(jti, ttype, username):
 
 
 @shared_task(ignore_result=False)
-def add_together(a: int, b: int) -> int:
-    try:
-        print("SLEEPING FOR 20s")
-        time.sleep(20)
-        print(1/0)
-        print(a + b)
-        return a + b
-    except Exception as e:
-        print(e)
+def send_verification_email(name, email, verification_token):
+    subject = "Verify Email"
+    recipients = [email]
+    body = f"""Hello {name},\nThank you for registering on Recipe Sharing Platform. Please click on the following 
+    link to verify your email:\n\nhttp://192.168.1.10:5000/users/email-verification/{verification_token}"""
+    sender = os.getenv("MAIL_USERNAME")
+
+    message = Message(
+        subject=subject,
+        recipients=recipients,
+        body=body,
+        sender=sender
+    )
+    mail.send(message)
+
+
+def verify_email(verification_token):
+    user_data = mongo.db.users.find_one({"verification_token": verification_token})
+    if user_data:
+        current_time = get_current_time()
+        mongo.db.users.update_one({"email": user_data["email"]},
+                                  {"$set": {"is_verified": True, "email_verified_at": current_time}})
+    else:
+        abort(400, message="Invalid token")

@@ -4,7 +4,7 @@ from flask_restful import Api, Resource
 
 from app.models.users import UserModel
 from app.response import Response
-from app.services.users import generate_jwt_tokens, revoke_jwt_token, add_together
+from app.services.users import generate_jwt_tokens, revoke_jwt_token, verify_email
 
 users_bp = Blueprint("users", __name__, url_prefix="/users")
 users_api = Api(users_bp)
@@ -14,8 +14,6 @@ class Users(Resource):
     @jwt_required()
     def get(self, user_id):
         user_data = UserModel.read(user_id=user_id)
-
-        add_together.delay(3, 5)
 
         return Response(
             status="success",
@@ -50,6 +48,17 @@ class Users(Resource):
 
     def put(self, user_id):
         pass
+
+
+class EmailVerification(Resource):
+    def get(self, verification_token):
+        verify_email(verification_token)
+
+        return Response(
+            status="success",
+            message="Email verified successfully",
+            status_code=200
+        ).send_response()
 
 
 class Login(Resource):
@@ -107,6 +116,7 @@ class TokenRefresh(Resource):
 
 
 users_api.add_resource(Users, "/", "/<user_id>")
+users_api.add_resource(EmailVerification, "/email-verification/<verification_token>")
 users_api.add_resource(Login, "/auth/login")
 users_api.add_resource(Logout, "/auth/logout")
 users_api.add_resource(TokenRefresh, "/auth/token-refresh")
