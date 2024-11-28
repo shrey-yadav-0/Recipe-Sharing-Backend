@@ -17,6 +17,7 @@ def database_connection_status():
     try:
         database_list = mongo.cx.list_database_names()
         database_name = os.getenv("MONGO_URI").split('/')[-1]
+        database_name = database_name.split('?')[0]
         if database_name in database_list:
             status = f"{database_name} is connected.", 200
         else:
