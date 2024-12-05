@@ -1,0 +1,17 @@
+steps:
+  # Docker Build
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t',
+           'us-central1-docker.pkg.dev/${PROJECT_ID}/sample-docker-standard-repository/application-image:1',
+           '.']
+    env:
+      - 'ENVIRONMENT=$ENVIRONMENT'
+      - 'SECRET_KEY=$SECRET_KEY'
+      - 'EMAIL_VERIFICATION_SALT=$EMAIL_VERIFICATION_SALT'
+      - 'MONGO_URI=$MONGO_URI'
+      - 'JWT_SECRET_KEY=$JWT_SECRET_KEY'
+
+  # Docker Push
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push',
+           'us-central1-docker.pkg.dev/${PROJECT_ID}/sample-docker-standard-repository/application-image:1']
